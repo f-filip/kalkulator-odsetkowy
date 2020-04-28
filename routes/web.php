@@ -12,4 +12,7 @@
 */
 
 Route::get('/','HomeController@index')->name('home');
-Route::post('/','HomeController@process')->name('result');
+Route::post('/result','HomeController@process')->name('result');
+
+Route::get('/payment','PaymentController@index')->name('home.payment');
+Route::post('/payment/result','PaymentController@process')->name('result.payment');

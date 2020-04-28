@@ -29,39 +29,20 @@ class HomeController extends Controller
 
     public function setRanges($start, $end)
     {
+        
+        $rates = count($this->interestrates);
+
+        for ($i=1; $i <= $rates;$i++){
+            if($this->check_in_range($this->interestrates[$i]['start'],$this->interestrates[$i]['end'],$start)){
+                $this->startrange = $i;
+            }
+
+            if($this->check_in_range($this->interestrates[$i]['start'],$this->interestrates[$i]['end'],$end)){
+                $this->endrange = $i;
+            }
+
+        }
    
-        //check start
-        if($this->check_in_range($this->interestrates['1']['start'],$this->interestrates['1']['end'],$start)){
-            $this->startrange = '1';
-        }
-      
-        if($this->check_in_range($this->interestrates['2']['start'],$this->interestrates['2']['end'],$start)){
-            $this->startrange = '2';
-        }
-
-        if($this->check_in_range($this->interestrates['3']['start'],$this->interestrates['3']['end'],$start)){
-            $this->startrange = '3';
-        }
-        if($this->check_in_range($this->interestrates['4']['start'],$this->interestrates['4']['end'],$start)){
-            $this->startrange = '4';
-        }
-
-        //check end
-        if($this->check_in_range($this->interestrates['1']['start'],$this->interestrates['1']['end'],$end)){
-            $this->endrange = '1';
-        }
-
-        if($this->check_in_range($this->interestrates['2']['start'],$this->interestrates['2']['end'],$end)){
-            $this->endrange = '2';
-        }
-    
-        if($this->check_in_range($this->interestrates['3']['start'],$this->interestrates['3']['end'],$end)){
-            $this->endrange = '3';
-        }
-        if($this->check_in_range($this->interestrates['4']['start'],$this->interestrates['4']['end'],$end)){
-            $this->endrange = '4';
-        }
-
         $this->rangesamount=$this->endrange;
     }
 
@@ -73,13 +54,20 @@ class HomeController extends Controller
     public function daysinranges(){
 
         for ($i = $this->startrange; $i <= $this->endrange; $i++){
-
+          
             //first loop
             if($i == $this->startrange)
-            {        
+            {  
+                echo "first";    
             $data = $this->setData($this->paymentdue,$this->interestrates[$i]['end']);
             $this->setresult($i,$data['days']-1,date('Y-m-d',strtotime($data['datestart']."+1 days")),$data['dateend'],$this->calculate($data['days']-1,$this->interestrates[$i]['interestrate']));
 
+            }
+            //only loop
+            if($i == $this->startrange && $i == $this->endrange)
+            {       
+                $data = $this->setData($this->paymentdue,$this->dateofpayment);
+                $this->setresult($i,$data['days']-1,date('Y-m-d',strtotime($data['datestart']."+1 days")),$data['dateend'],$this->calculate($data['days']-1,$this->interestrates[$i]['interestrate']));
             }
             //middle loop's
             if($i != $this->startrange && $i != $this->endrange){
@@ -87,7 +75,9 @@ class HomeController extends Controller
                 $this->setresult($i,$data['days'],$data['datestart'],$data['dateend'],$this->calculate($data['days'],$this->interestrates[$i]['interestrate']));
             }
             //last loop
-            if($i == "$this->endrange"){
+            if($i == $this->endrange && $i != $this->startrange){
+                echo "last";    
+
                 $data = $this->setData($this->interestrates[$this->endrange]['start'],$this->dateofpayment);
                 $this->setresult($i,$data['days'],$data['datestart'],$data['dateend'],$this->calculate($data['days'],$this->interestrates[$i]['interestrate']));
             }
@@ -110,19 +100,19 @@ class HomeController extends Controller
     {
         return $this->calcdata;
     }
+
+    //add if year 366 or 365 days
     public function calculate($days, $interestrate)
     {
-       
        return round(($days / 365) * $this->main * ($interestrate * 0.01),2);
             
-        
     }
 
-    
     public function process(request $request){
         $this->paymentdue = $request->start;
         $this->dateofpayment = $request->end;
         $this->main = $request->main;
+        //sprawdzić, które odsetki są zaznaczone, czy kapitałowe czy maxymalne
         $this->setranges($this->paymentdue,$this->dateofpayment );
         $this->daysinranges();
     }
@@ -135,16 +125,3 @@ class HomeController extends Controller
 }
 
 
-/** 
-*2014.12.23 - 2015.12.31 8%
-*2016.01.01 - 2019.12.31 7%
-*2020.01.01 - 2020.02.28 9%
-*/
-
-/**
- * ustalić stawkę % dla daty początkowej
- * sprawdzić czy endtate jest z tej stawki
- * ustalić ilość dni w tej stawce
- * ustalić czy enddata wchodzi do następnej stawki
- * jeśli wchodzi ustalić ilość dni w tej stawce, jeśłi nie to finito 
- */
